@@ -5,8 +5,7 @@ meta:
     version: 18
 build:
   additionalCommands:
-    - npm install
-    - npx prisma generate
+    - npm install && npx prisma generate
   artifacts:
     "*": /
 run:
