@@ -2,11 +2,11 @@
   "name": "backend",
   "version": "1.0.0",
   "type": "module",
-"scripts": {
-  "start": "node src/index.js",
-  "dev": "nodemon src/index.js",
-  "postinstall": "npx prisma generate && npx prisma db push"
-}
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "postinstall": "npx prisma generate && npx prisma db push"
+  },
   "dependencies": {
     "@prisma/client": "^5.0.0",
     "cors": "^2.8.5",
