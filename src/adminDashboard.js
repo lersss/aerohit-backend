@@ -47,6 +47,7 @@ router.get('/dashboard', async (req, res) => {
       margin-bottom: 20px;
       flex-wrap: wrap;
       gap: 10px;
+      <a href="/admin/orders" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:14px;">📦 Заказы</a>
     }
     .btn {
       padding: 10px 20px;
