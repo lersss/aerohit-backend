@@ -34,6 +34,10 @@ app.use(cors({
 }));
 console.log('8. CORS настроен');
 
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is working' });
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 console.log('9. JSON парсеры настроены');
