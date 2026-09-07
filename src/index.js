@@ -1,44 +1,127 @@
-﻿import express from 'express';
-import cors from 'cors';
-import session from 'express-session';
-import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs';
 
-import productRoutes from './routes/products.js';
-import cartRoutes from './routes/cart.js';
-import orderRoutes from './routes/orders.js';
-import adminRoutes from './routes/admin.js';
+export const getAdminProducts = async (req, res) => {
+  try {
+    const products = await prisma.product.findMany({ orderBy: { id: 'asc' } });
+    res.json(products);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка получения товаров' });
+  }
+};
 
-dotenv.config();
+export const createProduct = async (req, res) => {
+  try {
+    const { model, power, description, price1, price2, price3, price4, package: packageContent } = req.body;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+    const product = await prisma.product.create({
+      data: {
+        model,
+        power,
+        description,
+        price1: parseFloat(price1),
+        price2: parseFloat(price2),
+        price3: parseFloat(price3),
+        price4: parseFloat(price4),
+        package: packageContent,
+        imageUrl,
+      },
+    });
+    res.status(201).json(product);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка создания товара' });
+  }
+};
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+export const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { model, power, description, price1, price2, price3, price4, package: packageContent } = req.body;
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+    const existing = await prisma.product.findUnique({ where: { id: parseInt(id) } });
+    if (!existing) return res.status(404).json({ error: 'Товар не найден' });
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }
-}));
+    let imageUrl = existing.imageUrl;
+    if (req.file) {
+      if (existing.imageUrl) {
+        const oldPath = path.join(process.cwd(), 'src', existing.imageUrl);
+        try { fs.unlinkSync(oldPath); } catch (e) {}
+      }
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+    const updated = await prisma.product.update({
+      where: { id: parseInt(id) },
+      data: {
+        model,
+        power,
+        description,
+        price1: parseFloat(price1),
+        price2: parseFloat(price2),
+        price3: parseFloat(price3),
+        price4: parseFloat(price4),
+        package: packageContent,
+        imageUrl,
+      },
+    });
+    res.json(updated);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка обновления товара' });
+  }
+};
 
-app.use('/api/products', productRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/admin', adminRoutes);
+export const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.product.findUnique({ where: { id: parseInt(id) } });
+    if (!existing) return res.status(404).json({ error: 'Товар не найден' });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    if (existing.imageUrl) {
+      const oldPath = path.join(process.cwd(), 'src', existing.imageUrl);
+      try { fs.unlinkSync(oldPath); } catch (e) {}
+    }
+
+    await prisma.product.delete({ where: { id: parseInt(id) } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка удаления товара' });
+  }
+};
+
+export const getOrders = async (req, res) => {
+  try {
+    const orders = await prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { items: { include: { product: true } } },
+    });
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка получения заказов' });
+  }
+};
+
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['new', 'processing', 'done'].includes(status)) {
+      return res.status(400).json({ error: 'Недопустимый статус' });
+    }
+    const order = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: { status },
+    });
+    res.json(order);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Ошибка обновления статуса' });
+  }
+};
