@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import adminPanelRoutes from './adminPanel.js';
+import adminImagesRoutes from './adminImages.js';
 
 // Перехват всех ошибок до запуска
 process.on('uncaughtException', (err) => {
@@ -50,6 +51,7 @@ try {
   app.use('/api/orders', orderRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/admin', adminPanelRoutes);
+  app.use('/admin', adminImagesRoutes);
 
   console.log(`🌐 Запуск на порту ${PORT}...`);
   app.listen(PORT, '0.0.0.0', () => {
