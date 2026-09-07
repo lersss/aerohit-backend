@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "prestart": "npx prisma generate",
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "postinstall": "npx prisma generate"
+    "dev": "nodemon src/index.js"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
