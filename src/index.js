@@ -58,7 +58,7 @@ console.log('14. Маршруты orders зарегистрированы');
 app.use('/api/admin', adminRoutes);
 console.log('15. Маршруты admin зарегистрированы');
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 console.log('16. Файл index.js выполнен до конца');
