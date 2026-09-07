@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 import path from 'path';
 import fs from 'fs';
@@ -9,14 +9,14 @@ export const getAdminProducts = async (req, res) => {
     res.json(products);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ С‚РѕРІР°СЂРѕРІ' });
+    res.status(500).json({ error: 'Ошибка получения товаров' });
   }
 };
 
 export const createProduct = async (req, res) => {
   try {
-    const { model, power, description, price1, price2, price3, price4, package } = req.body;
-    const imageUrl = req.file ? /uploads/ : null;
+    const { model, power, description, price1, price2, price3, price4, package: packageContent } = req.body;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     const product = await prisma.product.create({
       data: {
@@ -27,24 +27,24 @@ export const createProduct = async (req, res) => {
         price2: parseFloat(price2),
         price3: parseFloat(price3),
         price4: parseFloat(price4),
-        package,
+        package: packageContent,
         imageUrl,
       },
     });
     res.status(201).json(product);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ С‚РѕРІР°СЂР°' });
+    res.status(500).json({ error: 'Ошибка создания товара' });
   }
 };
 
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { model, power, description, price1, price2, price3, price4, package } = req.body;
+    const { model, power, description, price1, price2, price3, price4, package: packageContent } = req.body;
 
     const existing = await prisma.product.findUnique({ where: { id: parseInt(id) } });
-    if (!existing) return res.status(404).json({ error: 'РўРѕРІР°СЂ РЅРµ РЅР°Р№РґРµРЅ' });
+    if (!existing) return res.status(404).json({ error: 'Товар не найден' });
 
     let imageUrl = existing.imageUrl;
     if (req.file) {
@@ -52,7 +52,7 @@ export const updateProduct = async (req, res) => {
         const oldPath = path.join(process.cwd(), 'src', existing.imageUrl);
         try { fs.unlinkSync(oldPath); } catch (e) {}
       }
-      imageUrl = /uploads/;
+      imageUrl = `/uploads/${req.file.filename}`;
     }
 
     const updated = await prisma.product.update({
@@ -65,14 +65,14 @@ export const updateProduct = async (req, res) => {
         price2: parseFloat(price2),
         price3: parseFloat(price3),
         price4: parseFloat(price4),
-        package,
+        package: packageContent,
         imageUrl,
       },
     });
     res.json(updated);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'РћС€РёР±РєР° РѕР±РЅРѕРІР»РµРЅРёСЏ С‚РѕРІР°СЂР°' });
+    res.status(500).json({ error: 'Ошибка обновления товара' });
   }
 };
 
@@ -80,7 +80,7 @@ export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const existing = await prisma.product.findUnique({ where: { id: parseInt(id) } });
-    if (!existing) return res.status(404).json({ error: 'РўРѕРІР°СЂ РЅРµ РЅР°Р№РґРµРЅ' });
+    if (!existing) return res.status(404).json({ error: 'Товар не найден' });
 
     if (existing.imageUrl) {
       const oldPath = path.join(process.cwd(), 'src', existing.imageUrl);
@@ -91,7 +91,7 @@ export const deleteProduct = async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ С‚РѕРІР°СЂР°' });
+    res.status(500).json({ error: 'Ошибка удаления товара' });
   }
 };
 
@@ -104,7 +104,7 @@ export const getOrders = async (req, res) => {
     res.json(orders);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ Р·Р°РєР°Р·РѕРІ' });
+    res.status(500).json({ error: 'Ошибка получения заказов' });
   }
 };
 
@@ -113,7 +113,7 @@ export const updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     if (!['new', 'processing', 'done'].includes(status)) {
-      return res.status(400).json({ error: 'РќРµРґРѕРїСѓСЃС‚РёРјС‹Р№ СЃС‚Р°С‚СѓСЃ' });
+      return res.status(400).json({ error: 'Недопустимый статус' });
     }
     const order = await prisma.order.update({
       where: { id: parseInt(id) },
@@ -122,6 +122,6 @@ export const updateOrderStatus = async (req, res) => {
     res.json(order);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'РћС€РёР±РєР° РѕР±РЅРѕРІР»РµРЅРёСЏ СЃС‚Р°С‚СѓСЃР°' });
+    res.status(500).json({ error: 'Ошибка обновления статуса' });
   }
 };
