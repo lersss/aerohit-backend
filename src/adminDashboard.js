@@ -5,7 +5,6 @@ import upload from './middleware/upload.js';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Главная админ-панель (без middleware, ключ запрашивается на странице)
 router.get('/dashboard', async (req, res) => {
   try {
     const products = await prisma.product.findMany({
@@ -40,13 +39,14 @@ router.get('/dashboard', async (req, res) => {
       margin-bottom: 20px;
       color: #0f172a;
     }
-<div class="top-bar">
-  <div>
-    <button id="showAddForm" class="btn btn-primary">➕ Добавить товар</button>
-    <a href="/admin/orders" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:14px; margin-left:15px;">📦 Заказы</a>
-  </div>
-  <a href="/admin/panel" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:14px;">Старая форма добавления</a>
-</div>
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
     .btn {
       padding: 10px 20px;
       border: none;
@@ -178,6 +178,14 @@ router.get('/dashboard', async (req, res) => {
       flex: 1;
       min-width: 200px;
     }
+    .link-button {
+      color: #2563eb;
+      text-decoration: underline;
+      font-size: 14px;
+      margin-left: 15px;
+      font-weight: 500;
+    }
+    .link-button:hover { color: #1d4ed8; }
     @media (max-width: 768px) {
       .form-row { grid-template-columns: 1fr; }
       .container { padding: 15px; }
@@ -200,7 +208,10 @@ router.get('/dashboard', async (req, res) => {
 
   <div id="mainContent" style="display:none;">
     <div class="top-bar">
-      <button id="showAddForm" class="btn btn-primary">➕ Добавить товар</button>
+      <div>
+        <button id="showAddForm" class="btn btn-primary">➕ Добавить товар</button>
+        <a href="/admin/orders" target="_blank" class="link-button">📦 Заказы</a>
+      </div>
       <a href="/admin/panel" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:14px;">Старая форма добавления</a>
     </div>
 
@@ -297,7 +308,6 @@ router.get('/dashboard', async (req, res) => {
 <script>
   let API_KEY = localStorage.getItem('adminApiKey') || '';
 
-  // Установка ключа
   document.getElementById('setApiKeyBtn').addEventListener('click', () => {
     const input = document.getElementById('apiKeyInput');
     const key = input.value.trim();
@@ -311,14 +321,12 @@ router.get('/dashboard', async (req, res) => {
     }
   });
 
-  // Если ключ уже сохранён, показываем контент сразу
   if (API_KEY) {
     document.getElementById('apiKeyInput').value = API_KEY;
     document.getElementById('apiKeyStatus').textContent = '✅ Ключ загружен';
     document.getElementById('mainContent').style.display = 'block';
   }
 
-  // Остальной код управления товарами (работает с API_KEY)
   const container = document.getElementById('formContainer');
   const form = document.getElementById('productForm');
   const formTitle = document.getElementById('formTitle');
