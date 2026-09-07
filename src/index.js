@@ -17,15 +17,18 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Создаём папку для картинок в постоянном хранилище
+// Создаём папку для картинок
 const uploadDir = '/data/uploads';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
-  console.log('📁 Папка uploads создана в постоянном хранилище');
+  console.log('📁 Папка uploads создана');
 }
 
 const app = express();
 const PORT = process.env.PORT || 80;
+
+// Доверяем прокси (Amvera использует Envoy)
+app.set('trust proxy', 1);
 
 // Глобальная обработка ошибок
 process.on('uncaughtException', (err) => {
@@ -35,52 +38,38 @@ process.on('unhandledRejection', (reason) => {
   console.error('❌ Unhandled Rejection:', reason);
 });
 
-console.log('🚀 Загрузка index.js...');
-
 // CORS
 app.use(cors({
   origin: 'https://aerohit-frontend-skycomposer.amvera.io',
   credentials: true,
 }));
-console.log('✅ CORS настроен');
 
-// JSON парсер
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-console.log('✅ JSON парсеры настроены');
-app.set('trust proxy', 1);
 
-// ===== НАСТРОЙКА СЕССИЙ =====
+// ===== СЕССИЯ (упрощённая для теста) =====
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
-  saveUninitialized: true,    // <-- стало
+  saveUninitialized: true,
   cookie: {
-    secure: true,
-    sameSite: 'none',
+    secure: false,      // временно
+    sameSite: 'lax',    // временно
     maxAge: 1000 * 60 * 60 * 24
   }
 }));
-console.log('✅ Сессии настроены');
 
-// Статика для картинок
 app.use('/uploads', express.static('/data/uploads'));
-console.log('✅ Статические файлы настроены');
 
-// Тестовые маршруты
 app.get('/', (req, res) => res.send('Hello from backend!'));
 app.get('/test', (req, res) => res.json({ message: 'Test route works' }));
 
-// Основные маршруты
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/admin', adminImagesRoutes);
 
-console.log('✅ Все маршруты зарегистрированы');
-
-// Запуск сервера
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
