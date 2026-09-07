@@ -4,9 +4,15 @@ meta:
     name: npm
     version: 18
 build:
+  env:
+    - name: DATABASE_URL
+      value: "postgresql://skycomposer:Ien1iek5be@amvera-skycomposer-cnpg-aerohit-ups-rw:5432/ups"
   artifacts:
     "*": /
 run:
+  env:
+    - name: DATABASE_URL
+      value: "postgresql://skycomposer:Ien1iek5be@amvera-skycomposer-cnpg-aerohit-ups-rw:5432/ups"
   command: npm start
   containerPort: 80
   persistenceMount: /data
