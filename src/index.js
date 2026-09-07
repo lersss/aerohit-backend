@@ -6,6 +6,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import adminEditRoutes from './adminEdit.js';
+import adminDashboardRoutes from './adminDashboard.js';
+
 
 import productRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
@@ -47,6 +49,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/admin', adminDashboardRoutes);
 
 // ===== СЕССИЯ (упрощённая для теста) =====
 app.use(session({
