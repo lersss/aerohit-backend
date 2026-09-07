@@ -34,6 +34,10 @@ app.use(cors({
 }));
 console.log('8. CORS настроен');
 
+app.get('/', (req, res) => {
+  res.send('Hello from backend!');
+});
+
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working' });
 });
