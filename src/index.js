@@ -44,7 +44,7 @@ try {
     saveUninitialized: false,
     cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }
   }));
-  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+  app.use('/uploads', express.static('/data/uploads'));
 
   app.get('/', (req, res) => res.send('Hello from backend!'));
   app.get('/test', (req, res) => res.json({ message: 'Test route works' }));
