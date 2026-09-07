@@ -48,6 +48,7 @@ console.log('✅ CORS настроен');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 console.log('✅ JSON парсеры настроены');
+app.set('trust proxy', 1);
 
 // ===== НАСТРОЙКА СЕССИЙ =====
 app.use(session({
