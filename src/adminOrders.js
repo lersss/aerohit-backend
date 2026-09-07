@@ -199,12 +199,10 @@ router.get('/orders', async (req, res) => {
       if (!res.ok) throw new Error('Ошибка загрузки заказов');
       let orders = await res.json();
 
-      // Фильтр по статусу
       if (statusFilter !== 'all') {
         orders = orders.filter(o => o.status === statusFilter);
       }
 
-      // Поиск
       if (search) {
         const s = search.toLowerCase();
         orders = orders.filter(o =>
@@ -221,41 +219,42 @@ router.get('/orders', async (req, res) => {
 
       let html = '<table><thead><tr><th>ID</th><th>Клиент</th><th>Товары</th><th>Сумма</th><th>Статус</th><th>Дата</th><th>Действия</th></tr></thead><tbody>';
       orders.forEach(o => {
-        const itemsList = o.items.map(item => `${item.product.model} (${item.quantity} шт.)`).join(', ');
-        const statusClass = 'status-' + o.status;
-        const statusLabels = { new: 'Новый', processing: 'В обработке', done: 'Готово' };
-        html += `
-          <tr>
-            <td>${o.id}</td>
-            <td><strong>${o.name}</strong><br><small>${o.phone}<br>${o.email}</small></td>
-            <td class="order-items">${itemsList}</td>
-            <td>${o.total} ₽</td>
-            <td><span class="status-badge ${statusClass}">${statusLabels[o.status]}</span></td>
-            <td>${new Date(o.createdAt).toLocaleDateString()} ${new Date(o.createdAt).toLocaleTimeString()}</td>
-            <td>
-              <button class="btn btn-warning btn-sm status-btn" data-id="${o.id}" data-status="processing">В обработку</button>
-              <button class="btn btn-success btn-sm status-btn" data-id="${o.id}" data-status="done">Готово</button>
-            </td>
-          </tr>
-        `;
+        // Исправленная строка: конкатенация вместо шаблонной строки
+        var itemsList = o.items.map(function(item) {
+          return item.product.model + ' (' + item.quantity + ' шт.)';
+        }).join(', ');
+
+        var statusClass = 'status-' + o.status;
+        var statusLabels = { new: 'Новый', processing: 'В обработке', done: 'Готово' };
+        html += '<tr>' +
+          '<td>' + o.id + '</td>' +
+          '<td><strong>' + o.name + '</strong><br><small>' + o.phone + '<br>' + o.email + '</small></td>' +
+          '<td class="order-items">' + itemsList + '</td>' +
+          '<td>' + o.total + ' ₽</td>' +
+          '<td><span class="status-badge ' + statusClass + '">' + statusLabels[o.status] + '</span></td>' +
+          '<td>' + new Date(o.createdAt).toLocaleDateString() + ' ' + new Date(o.createdAt).toLocaleTimeString() + '</td>' +
+          '<td>' +
+            '<button class="btn btn-warning btn-sm status-btn" data-id="' + o.id + '" data-status="processing">В обработку</button> ' +
+            '<button class="btn btn-success btn-sm status-btn" data-id="' + o.id + '" data-status="done">Готово</button>' +
+          '</td>' +
+        '</tr>';
       });
       html += '</tbody></table>';
       container.innerHTML = html;
 
-      // Обработчики изменения статуса
-      document.querySelectorAll('.status-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const id = btn.dataset.id;
-          const status = btn.dataset.status;
+      document.querySelectorAll('.status-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var id = this.dataset.id;
+          var status = this.dataset.status;
           if (!confirm('Изменить статус заказа #' + id + ' на "' + status + '"?')) return;
           try {
-            const res = await fetch('/api/admin/orders/' + id, {
+            var res = await fetch('/api/admin/orders/' + id, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': API_KEY
               },
-              body: JSON.stringify({ status })
+              body: JSON.stringify({ status: status })
             });
             if (res.ok) {
               alert('✅ Статус обновлён');
@@ -276,7 +275,6 @@ router.get('/orders', async (req, res) => {
   document.getElementById('applyFilterBtn').addEventListener('click', loadOrders);
   document.getElementById('refreshBtn').addEventListener('click', loadOrders);
 
-  // Если ключ уже сохранён, загружаем заказы сразу
   if (API_KEY) {
     loadOrders();
   }
