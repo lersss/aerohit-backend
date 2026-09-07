@@ -6,8 +6,8 @@ import upload from './middleware/upload.js';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Страница загрузки изображений
-router.get('/images', adminAuth, async (req, res) => {
+// Страница загрузки изображений (доступна без авторизации)
+router.get('/images', async (req, res) => {
   try {
     const products = await prisma.product.findMany({
       orderBy: { model: 'asc' }
@@ -107,7 +107,7 @@ router.get('/images', adminAuth, async (req, res) => {
   }
 });
 
-// Обработчик загрузки изображения
+// Обработчик загрузки изображения (требует авторизации)
 router.post('/upload', adminAuth, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
