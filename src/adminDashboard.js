@@ -40,15 +40,13 @@ router.get('/dashboard', async (req, res) => {
       margin-bottom: 20px;
       color: #0f172a;
     }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 10px;
-      <a href="/admin/orders" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:14px;">📦 Заказы</a>
-    }
+<div class="top-bar">
+  <div>
+    <button id="showAddForm" class="btn btn-primary">➕ Добавить товар</button>
+    <a href="/admin/orders" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:14px; margin-left:15px;">📦 Заказы</a>
+  </div>
+  <a href="/admin/panel" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:14px;">Старая форма добавления</a>
+</div>
     .btn {
       padding: 10px 20px;
       border: none;
