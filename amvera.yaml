@@ -4,12 +4,9 @@ meta:
     name: npm
     version: 18
 build:
-  additionalCommands:
-    - npm install
-    - npx prisma generate
   artifacts:
     "*": /
 run:
-  command: node src/index.js
+  command: npm start
   containerPort: 5000
   persistenceMount: /data
