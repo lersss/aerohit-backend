@@ -53,11 +53,11 @@ console.log('✅ JSON парсеры настроены');
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,    // <-- стало
   cookie: {
-    secure: true,          // обязательно для HTTPS
-    sameSite: 'none',      // обязательно для кросс-доменных запросов
-    maxAge: 1000 * 60 * 60 * 24 // 1 день
+    secure: true,
+    sameSite: 'none',
+    maxAge: 1000 * 60 * 60 * 24
   }
 }));
 console.log('✅ Сессии настроены');
