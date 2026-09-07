@@ -62,7 +62,7 @@ export const createOrder = async (req, res) => {
     const pdfBuffer = await generatePDF(order);
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', ttachment; filename=order-.pdf);
+    res.setHeader('Content-Disposition', `attachment; filename=order-${order.id}.pdf`);
     res.send(pdfBuffer);
 
   } catch (error) {
