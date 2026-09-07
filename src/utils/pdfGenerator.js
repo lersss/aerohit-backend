@@ -1,4 +1,4 @@
-﻿import PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
 
 const generatePDF = (order) => {
@@ -14,27 +14,27 @@ const generatePDF = (order) => {
 
       doc.pipe(stream);
 
-      doc.fontSize(20).text('Р—Р°РєР°Р· в„–' + order.id, { align: 'center' });
+      doc.fontSize(20).text(`Заказ №${order.id}`, { align: 'center' });
       doc.moveDown();
 
       doc.fontSize(12);
-      doc.text(РљР»РёРµРЅС‚: );
-      doc.text(РўРµР»РµС„РѕРЅ: );
-      doc.text(Email: );
-      if (order.comment) doc.text(РљРѕРјРјРµРЅС‚Р°СЂРёР№: );
+      doc.text(`Клиент: ${order.name}`);
+      doc.text(`Телефон: ${order.phone}`);
+      doc.text(`Email: ${order.email}`);
+      if (order.comment) doc.text(`Комментарий: ${order.comment}`);
       doc.moveDown();
-      doc.text(Р”Р°С‚Р°: );
+      doc.text(`Дата: ${new Date(order.createdAt).toLocaleString()}`);
       doc.moveDown();
 
       const tableTop = doc.y + 20;
       let position = tableTop;
 
       doc.font('Helvetica-Bold');
-      doc.text('РњРѕРґРµР»СЊ', 50, position);
-      doc.text('РњРѕС‰РЅРѕСЃС‚СЊ', 200, position);
-      doc.text('РљРѕР»-РІРѕ', 350, position);
-      doc.text('Р¦РµРЅР° Р·Р° С€С‚.', 420, position);
-      doc.text('РЎСѓРјРјР°', 500, position);
+      doc.text('Модель', 50, position);
+      doc.text('Мощность', 200, position);
+      doc.text('Кол-во', 350, position);
+      doc.text('Цена за шт.', 420, position);
+      doc.text('Сумма', 500, position);
       doc.moveDown();
       position += 30;
 
@@ -45,14 +45,14 @@ const generatePDF = (order) => {
         doc.text(product.model, 50, rowY);
         doc.text(product.power, 200, rowY);
         doc.text(item.quantity.toString(), 350, rowY);
-        doc.text(item.price.toFixed(2) + ' в‚Ѕ', 420, rowY);
-        doc.text((item.price * item.quantity).toFixed(2) + ' в‚Ѕ', 500, rowY);
+        doc.text(item.price.toFixed(2) + ' ₽', 420, rowY);
+        doc.text((item.price * item.quantity).toFixed(2) + ' ₽', 500, rowY);
         position += 25;
       }
 
       position += 20;
       doc.font('Helvetica-Bold');
-      doc.text(РС‚РѕРіРѕ:  в‚Ѕ, 500, position, { align: 'right' });
+      doc.text(`Итого: ${order.total.toFixed(2)} ₽`, 500, position, { align: 'right' });
 
       doc.end();
     } catch (error) {
