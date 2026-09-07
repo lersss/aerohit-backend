@@ -3,11 +3,31 @@ import cors from 'cors';
 import session from 'express-session';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
-import adminPanelRoutes from './adminPanel.js';
-import adminImagesRoutes from './adminImages.js';
 
-// Перехват всех ошибок до запуска
+import productRoutes from './routes/products.js';
+import cartRoutes from './routes/cart.js';
+import orderRoutes from './routes/orders.js';
+import adminRoutes from './routes/admin.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ===== СОЗДАЁМ ПАПКУ ДЛЯ КАРТИНОК =====
+const uploadDir = '/data/uploads';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('📁 Папка uploads создана в постоянном хранилище');
+}
+// =======================================
+
+const app = express();
+const PORT = process.env.PORT || 80;
+
+// Глобальная обработка ошибок (для диагностики)
 process.on('uncaughtException', (err) => {
   console.error('❌ Uncaught Exception:', err);
 });
@@ -15,52 +35,49 @@ process.on('unhandledRejection', (reason) => {
   console.error('❌ Unhandled Rejection:', reason);
 });
 
-try {
-  console.log('🚀 Загрузка .env...');
-  dotenv.config();
+console.log('1. Начало загрузки index.js');
+console.log('2. Переменные окружения загружены, PORT=', PORT);
 
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const PORT = process.env.PORT || 80;
-
-  console.log('📦 Импорт маршрутов...');
-  const productRoutes = (await import('./routes/products.js')).default;
-  const cartRoutes = (await import('./routes/cart.js')).default;
-  const orderRoutes = (await import('./routes/orders.js')).default;
-  const adminRoutes = (await import('./routes/admin.js')).default;
-
-  console.log('🛠️ Создание Express...');
-  const app = express();
-
- app.use(cors({
+// CORS — разрешаем запросы с вашего фронтенда
+app.use(cors({
   origin: 'https://aerohit-frontend-skycomposer.amvera.io',
-  credentials: true
+  credentials: true,
 }));
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }
-  }));
-  app.use('/uploads', express.static('/data/uploads'));
+console.log('8. CORS настроен');
 
-  app.get('/', (req, res) => res.send('Hello from backend!'));
-  app.get('/test', (req, res) => res.json({ message: 'Test route works' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+console.log('9. JSON парсеры настроены');
 
-  app.use('/api/products', productRoutes);
-  app.use('/api/cart', cartRoutes);
-  app.use('/api/orders', orderRoutes);
-  app.use('/api/admin', adminRoutes);
-  app.use('/admin', adminPanelRoutes);
-  app.use('/admin', adminImagesRoutes);
+// Сессии (для корзины)
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }
+}));
+console.log('10. Сессии настроены');
 
-  console.log(`🌐 Запуск на порту ${PORT}...`);
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ Server running on port ${PORT}`);
-  });
+// Раздача статики (картинки)
+app.use('/uploads', express.static('/data/uploads'));
+console.log('11. Статические файлы настроены');
 
-} catch (error) {
-  console.error('❌ Критическая ошибка при запуске:', error);
-}
+// Тестовые маршруты
+app.get('/', (req, res) => res.send('Hello from backend!'));
+app.get('/test', (req, res) => res.json({ message: 'Test route works' }));
+
+// Основные маршруты API
+app.use('/api/products', productRoutes);
+console.log('12. Маршруты products зарегистрированы');
+app.use('/api/cart', cartRoutes);
+console.log('13. Маршруты cart зарегистрированы');
+app.use('/api/orders', orderRoutes);
+console.log('14. Маршруты orders зарегистрированы');
+app.use('/api/admin', adminRoutes);
+console.log('15. Маршруты admin зарегистрированы');
+
+// Запуск сервера
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
+console.log('16. Файл index.js выполнен до конца');
