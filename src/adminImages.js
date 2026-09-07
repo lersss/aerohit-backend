@@ -1,16 +1,17 @@
 import express from 'express';
 import { adminAuth } from './middleware/auth.js';
-import axios from 'axios';
-import FormData from 'form-data';
+import { PrismaClient } from '@prisma/client';
+import upload from './middleware/upload.js';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Страница загрузки изображений
 router.get('/images', adminAuth, async (req, res) => {
   try {
-    // Получаем список товаров с бэкенда
-    const response = await axios.get(`${req.protocol}://${req.get('host')}/api/products`);
-    const products = response.data;
+    const products = await prisma.product.findMany({
+      orderBy: { model: 'asc' }
+    });
 
     let html = `
     <!DOCTYPE html>
@@ -24,7 +25,7 @@ router.get('/images', adminAuth, async (req, res) => {
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background: #f0f0f0; }
-        .upload-form { display: flex; gap: 10px; align-items: center; }
+        .upload-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         input[type="file"] { padding: 5px; }
         button { padding: 6px 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
         button:hover { background: #0056b3; }
@@ -51,6 +52,7 @@ router.get('/images', adminAuth, async (req, res) => {
           <td>
             <form class="upload-form" data-id="${p.id}" action="/admin/upload" method="post" enctype="multipart/form-data">
               <input type="file" name="image" accept="image/*" required />
+              <input type="hidden" name="productId" value="${p.id}" />
               <button type="submit">Загрузить</button>
               <span class="result" id="result-${p.id}"></span>
             </form>
@@ -81,7 +83,6 @@ router.get('/images', adminAuth, async (req, res) => {
             if (response.ok) {
               resultSpan.textContent = '✅';
               resultSpan.style.color = 'green';
-              // Обновим страницу через секунду, чтобы показать новое изображение
               setTimeout(() => location.reload(), 1000);
             } else {
               const text = await response.text();
@@ -101,50 +102,30 @@ router.get('/images', adminAuth, async (req, res) => {
 
     res.send(html);
   } catch (error) {
+    console.error(error);
     res.status(500).send('Ошибка загрузки страницы: ' + error.message);
   }
 });
 
 // Обработчик загрузки изображения
-router.post('/upload', adminAuth, async (req, res) => {
+router.post('/upload', adminAuth, upload.single('image'), async (req, res) => {
   try {
-    // Используем multer для обработки файла — мы уже настроили его в upload.js
-    // Но нам нужно обработать multipart/form-data, поэтому используем multer как middleware
-    // Проще всего сделать отдельный маршрут с multer
-    // Но для простоты мы используем готовый upload из middleware
-    // Импортируем его здесь
-    const upload = (await import('../middleware/upload.js')).default;
-    upload.single('image')(req, res, async (err) => {
-      if (err) {
-        return res.status(400).send(err.message);
-      }
-      if (!req.file) {
-        return res.status(400).send('Файл не выбран');
-      }
-
-      const productId = req.body.productId || req.query.productId;
-      if (!productId) {
-        return res.status(400).send('ID товара не указан');
-      }
-
-      // Обновляем товар в базе
-      const { PrismaClient } = await import('@prisma/client');
-      const prisma = new PrismaClient();
-      try {
-        const imageUrl = `/uploads/${req.file.filename}`;
-        await prisma.product.update({
-          where: { id: parseInt(productId) },
-          data: { imageUrl }
-        });
-        res.send('OK');
-      } catch (error) {
-        res.status(500).send('Ошибка обновления: ' + error.message);
-      } finally {
-        await prisma.$disconnect();
-      }
+    if (!req.file) {
+      return res.status(400).send('Файл не выбран');
+    }
+    const productId = req.body.productId;
+    if (!productId) {
+      return res.status(400).send('ID товара не указан');
+    }
+    const imageUrl = `/uploads/${req.file.filename}`;
+    await prisma.product.update({
+      where: { id: parseInt(productId) },
+      data: { imageUrl }
     });
+    res.send('OK');
   } catch (error) {
-    res.status(500).send('Ошибка: ' + error.message);
+    console.error(error);
+    res.status(500).send('Ошибка обновления: ' + error.message);
   }
 });
 
