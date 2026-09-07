@@ -1,15 +1,12 @@
 import express from 'express';
-import { adminAuth } from './middleware/auth.js';
 import { PrismaClient } from '@prisma/client';
 import upload from './middleware/upload.js';
-import fs from 'fs';
-import path from 'path';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Главная админ-панель
-router.get('/dashboard', adminAuth, async (req, res) => {
+// Главная админ-панель (без middleware, ключ запрашивается на странице)
+router.get('/dashboard', async (req, res) => {
   try {
     const products = await prisma.product.findMany({
       orderBy: { model: 'asc' }
@@ -164,6 +161,24 @@ router.get('/dashboard', adminAuth, async (req, res) => {
       padding: 4px;
       font-size: 12px;
     }
+    .api-key-form {
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .api-key-form label { font-weight: 600; }
+    .api-key-form input {
+      padding: 10px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 30px;
+      flex: 1;
+      min-width: 200px;
+    }
     @media (max-width: 768px) {
       .form-row { grid-template-columns: 1fr; }
       .container { padding: 15px; }
@@ -176,104 +191,135 @@ router.get('/dashboard', adminAuth, async (req, res) => {
 <body>
 <div class="container">
   <h1>🛠️ Админ-панель</h1>
-  <div class="top-bar">
-    <button id="showAddForm" class="btn btn-primary">➕ Добавить товар</button>
-    <a href="/admin/panel" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:14px;">Старая форма добавления</a>
+
+  <div class="api-key-form" id="apiKeyForm">
+    <label for="apiKeyInput">API-ключ:</label>
+    <input type="password" id="apiKeyInput" placeholder="Введите ваш API-ключ" />
+    <button class="btn btn-primary" id="setApiKeyBtn">Применить</button>
+    <span id="apiKeyStatus" style="font-size:14px; color:#475569;"></span>
   </div>
 
-  <!-- Таблица товаров -->
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Модель</th>
-        <th>Мощность</th>
-        <th>Цена (≤5)</th>
-        <th>Изображение</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${products.map(p => `
-        <tr data-id="${p.id}">
-          <td>${p.id}</td>
-          <td><strong>${p.model}</strong></td>
-          <td>${p.power}</td>
-          <td>${p.price1} ₽</td>
-          <td>
-            ${p.imageUrl ? `<img src="${p.imageUrl}" class="product-img" />` : '—'}
-          </td>
-          <td>
-            <div class="actions">
-              <button class="btn btn-warning btn-sm edit-btn" data-id="${p.id}">✏️</button>
-              <button class="btn btn-danger btn-sm delete-btn" data-id="${p.id}">🗑️</button>
-              <form class="image-upload-form" data-id="${p.id}">
-                <input type="file" name="image" accept="image/*" />
-                <button type="submit" class="btn btn-primary btn-sm">📤</button>
-              </form>
-            </div>
-          </td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
+  <div id="mainContent" style="display:none;">
+    <div class="top-bar">
+      <button id="showAddForm" class="btn btn-primary">➕ Добавить товар</button>
+      <a href="/admin/panel" target="_blank" style="color:#2563eb; text-decoration:underline; font-size:14px;">Старая форма добавления</a>
+    </div>
 
-  <!-- Форма добавления/редактирования -->
-  <div id="formContainer" class="form-container">
-    <h2 id="formTitle">Добавить товар</h2>
-    <form id="productForm" enctype="multipart/form-data">
-      <input type="hidden" id="editId" />
-      <div class="form-row">
-        <div class="form-group">
-          <label>Модель *</label>
-          <input type="text" id="model" required />
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Модель</th>
+          <th>Мощность</th>
+          <th>Цена (≤5)</th>
+          <th>Изображение</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${products.map(p => `
+          <tr data-id="${p.id}">
+            <td>${p.id}</td>
+            <td><strong>${p.model}</strong></td>
+            <td>${p.power}</td>
+            <td>${p.price1} ₽</td>
+            <td>
+              ${p.imageUrl ? `<img src="${p.imageUrl}" class="product-img" />` : '—'}
+            </td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-warning btn-sm edit-btn" data-id="${p.id}">✏️</button>
+                <button class="btn btn-danger btn-sm delete-btn" data-id="${p.id}">🗑️</button>
+                <form class="image-upload-form" data-id="${p.id}">
+                  <input type="file" name="image" accept="image/*" />
+                  <button type="submit" class="btn btn-primary btn-sm">📤</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+
+    <div id="formContainer" class="form-container">
+      <h2 id="formTitle">Добавить товар</h2>
+      <form id="productForm" enctype="multipart/form-data">
+        <input type="hidden" id="editId" />
+        <div class="form-row">
+          <div class="form-group">
+            <label>Модель *</label>
+            <input type="text" id="model" required />
+          </div>
+          <div class="form-group">
+            <label>Мощность</label>
+            <input type="text" id="power" />
+          </div>
         </div>
         <div class="form-group">
-          <label>Мощность</label>
-          <input type="text" id="power" />
+          <label>Описание</label>
+          <textarea id="description" rows="4"></textarea>
         </div>
-      </div>
-      <div class="form-group">
-        <label>Описание</label>
-        <textarea id="description" rows="4"></textarea>
-      </div>
-      <div class="form-row">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Цена (≤5 шт) *</label>
+            <input type="number" step="0.01" id="price1" required />
+          </div>
+          <div class="form-group">
+            <label>Цена (≤200 шт) *</label>
+            <input type="number" step="0.01" id="price2" required />
+          </div>
+          <div class="form-group">
+            <label>Цена (≤500 шт) *</label>
+            <input type="number" step="0.01" id="price3" required />
+          </div>
+          <div class="form-group">
+            <label>Цена (≥501 шт) *</label>
+            <input type="number" step="0.01" id="price4" required />
+          </div>
+        </div>
         <div class="form-group">
-          <label>Цена (≤5 шт) *</label>
-          <input type="number" step="0.01" id="price1" required />
+          <label>Комплектация</label>
+          <textarea id="package" rows="3"></textarea>
         </div>
         <div class="form-group">
-          <label>Цена (≤200 шт) *</label>
-          <input type="number" step="0.01" id="price2" required />
+          <label>Изображение (оставьте пустым, если не меняете)</label>
+          <input type="file" id="image" accept="image/*" />
         </div>
-        <div class="form-group">
-          <label>Цена (≤500 шт) *</label>
-          <input type="number" step="0.01" id="price3" required />
+        <div class="form-actions">
+          <button type="submit" class="btn btn-success" id="submitBtn">Сохранить</button>
+          <button type="button" class="btn btn-danger" id="cancelForm">Отмена</button>
         </div>
-        <div class="form-group">
-          <label>Цена (≥501 шт) *</label>
-          <input type="number" step="0.01" id="price4" required />
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Комплектация</label>
-        <textarea id="package" rows="3"></textarea>
-      </div>
-      <div class="form-group">
-        <label>Изображение (оставьте пустым, если не меняете)</label>
-        <input type="file" id="image" accept="image/*" />
-      </div>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-success" id="submitBtn">Сохранить</button>
-        <button type="button" class="btn btn-danger" id="cancelForm">Отмена</button>
-      </div>
-      <div id="formMessage" class="message"></div>
-    </form>
+        <div id="formMessage" class="message"></div>
+      </form>
+    </div>
   </div>
 </div>
 
 <script>
-  const API_KEY = '${process.env.ADMIN_API_KEY}';
+  let API_KEY = localStorage.getItem('adminApiKey') || '';
+
+  // Установка ключа
+  document.getElementById('setApiKeyBtn').addEventListener('click', () => {
+    const input = document.getElementById('apiKeyInput');
+    const key = input.value.trim();
+    if (key) {
+      API_KEY = key;
+      localStorage.setItem('adminApiKey', key);
+      document.getElementById('apiKeyStatus').textContent = '✅ Ключ установлен';
+      document.getElementById('mainContent').style.display = 'block';
+    } else {
+      alert('Введите ключ');
+    }
+  });
+
+  // Если ключ уже сохранён, показываем контент сразу
+  if (API_KEY) {
+    document.getElementById('apiKeyInput').value = API_KEY;
+    document.getElementById('apiKeyStatus').textContent = '✅ Ключ загружен';
+    document.getElementById('mainContent').style.display = 'block';
+  }
+
+  // Остальной код управления товарами (работает с API_KEY)
   const container = document.getElementById('formContainer');
   const form = document.getElementById('productForm');
   const formTitle = document.getElementById('formTitle');
@@ -281,8 +327,8 @@ router.get('/dashboard', adminAuth, async (req, res) => {
   const cancelBtn = document.getElementById('cancelForm');
   const msgDiv = document.getElementById('formMessage');
 
-  // Показать форму добавления
   document.getElementById('showAddForm').addEventListener('click', () => {
+    if (!API_KEY) return alert('Сначала установите API-ключ');
     form.reset();
     document.getElementById('editId').value = '';
     formTitle.textContent = '➕ Добавить товар';
@@ -293,14 +339,13 @@ router.get('/dashboard', adminAuth, async (req, res) => {
     window.scrollTo({ top: container.offsetTop - 20, behavior: 'smooth' });
   });
 
-  // Отмена
   cancelBtn.addEventListener('click', () => {
     container.classList.remove('active');
   });
 
-  // Редактирование
   document.querySelectorAll('.edit-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if (!API_KEY) return alert('Сначала установите API-ключ');
       const id = btn.dataset.id;
       const res = await fetch('/api/products/' + id);
       const p = await res.json();
@@ -323,9 +368,9 @@ router.get('/dashboard', adminAuth, async (req, res) => {
     });
   });
 
-  // Отправка формы (добавление / обновление)
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!API_KEY) return alert('Сначала установите API-ключ');
     const id = document.getElementById('editId').value;
     const formData = new FormData();
     formData.append('model', document.getElementById('model').value);
@@ -369,9 +414,9 @@ router.get('/dashboard', adminAuth, async (req, res) => {
     }
   });
 
-  // Удаление товара
   document.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if (!API_KEY) return alert('Сначала установите API-ключ');
       const id = btn.dataset.id;
       if (!confirm('Удалить товар?')) return;
       try {
@@ -391,10 +436,10 @@ router.get('/dashboard', adminAuth, async (req, res) => {
     });
   });
 
-  // Загрузка изображения (через форму в строке)
   document.querySelectorAll('.image-upload-form').forEach(form => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!API_KEY) return alert('Сначала установите API-ключ');
       const id = form.dataset.id;
       const fileInput = form.querySelector('input[type="file"]');
       const file = fileInput.files[0];
