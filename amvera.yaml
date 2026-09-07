@@ -4,11 +4,8 @@ meta:
     name: npm
     version: 18
 build:
-  additionalCommands:
-    - npm install
-    - npx prisma generate
   artifacts:
     "*": /
 run:
-  scriptName: src/index.js
+  command: npm start
   persistenceMount: /data
