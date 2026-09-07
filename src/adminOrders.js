@@ -33,6 +33,16 @@ router.get('/orders', async (req, res) => {
       font-weight: 600;
       margin-bottom: 20px;
       color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    h1 a {
+      font-size: 16px;
+      color: #2563eb;
+      text-decoration: underline;
+      font-weight: 500;
     }
     .top-bar {
       display: flex;
@@ -132,7 +142,10 @@ router.get('/orders', async (req, res) => {
 </head>
 <body>
 <div class="container">
-  <h1>📦 Заказы</h1>
+  <h1>
+    📦 Заказы
+    <a href="/admin/dashboard">🛠️ Товары</a>
+  </h1>
 
   <div class="api-key-form" id="apiKeyForm">
     <label for="apiKeyInput">API-ключ:</label>
@@ -219,7 +232,6 @@ router.get('/orders', async (req, res) => {
 
       let html = '<table><thead><tr><th>ID</th><th>Клиент</th><th>Товары</th><th>Сумма</th><th>Статус</th><th>Дата</th><th>Действия</th></tr></thead><tbody>';
       orders.forEach(o => {
-        // Исправленная строка: конкатенация вместо шаблонной строки
         var itemsList = o.items.map(function(item) {
           return item.product.model + ' (' + item.quantity + ' шт.)';
         }).join(', ');
