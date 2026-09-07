@@ -48,9 +48,12 @@ export const updateProduct = async (req, res) => {
 
     let imageUrl = existing.imageUrl;
     if (req.file) {
+      // Удаляем старое изображение, только если оно существует
       if (existing.imageUrl) {
         const oldPath = path.join(process.cwd(), 'src', existing.imageUrl);
-        try { fs.unlinkSync(oldPath); } catch (e) {}
+        if (fs.existsSync(oldPath)) {
+          try { fs.unlinkSync(oldPath); } catch (e) {}
+        }
       }
       imageUrl = `/uploads/${req.file.filename}`;
     }
@@ -84,7 +87,9 @@ export const deleteProduct = async (req, res) => {
 
     if (existing.imageUrl) {
       const oldPath = path.join(process.cwd(), 'src', existing.imageUrl);
-      try { fs.unlinkSync(oldPath); } catch (e) {}
+      if (fs.existsSync(oldPath)) {
+        try { fs.unlinkSync(oldPath); } catch (e) {}
+      }
     }
 
     await prisma.product.delete({ where: { id: parseInt(id) } });
