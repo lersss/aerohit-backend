@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import adminEditRoutes from './adminEdit.js';
 
 import productRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
@@ -60,6 +61,7 @@ app.use(session({
 }));
 
 app.use('/uploads', express.static('/data/uploads'));
+app.use('/admin', adminEditRoutes);
 
 app.get('/', (req, res) => res.send('Hello from backend!'));
 app.get('/test', (req, res) => res.json({ message: 'Test route works' }));
